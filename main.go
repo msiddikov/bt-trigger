@@ -20,17 +20,23 @@ type (
 )
 
 var (
-	quitCh chan struct{}
+	quitCh, offCabinetCh, offOfficeCh chan struct{}
+	checkOffice, checkCabinet         bool
 )
 
 func main() {
 	systray.Run(onReady, onExit)
-
 }
 
-func quitter() {
-	<-quitCh
-	systray.Quit()
+func menuHandler() {
+	select {
+	case <-quitCh:
+		systray.Quit()
+	case <-offCabinetCh:
+		checkCabinet = false
+	case <-offOfficeCh:
+		checkOffice = false
+	}
 }
 
 func onReady() {
@@ -40,8 +46,12 @@ func onReady() {
 	systray.SetTitle("Light controller")
 	systray.SetTooltip("Controlls office light")
 	mQuit := systray.AddMenuItem("Quit", "Quit the app")
+	mOffOffice := systray.AddMenuItem("Office off", "Stop checking office lights")
+	mOffCabinet := systray.AddMenuItem("Cabinet off", "Stop checking cabinet lights")
 	quitCh = mQuit.ClickedCh
-	go quitter()
+	offOfficeCh = mOffOffice.ClickedCh
+	offCabinetCh = mOffCabinet.ClickedCh
+	go menuHandler()
 }
 
 func onExit() {
@@ -49,14 +59,15 @@ func onExit() {
 }
 
 func MasonLight() {
+	checkCabinet = true
 	fmt.Println("Controlling Mason's light")
 	inTheOffice := false
 
 	config := []IpConf{
-		{
-			Ip:        "192.168.100.19",
-			Interface: "192.168.100.57",
-		},
+		// {
+		// 	Ip:        "192.168.100.19",
+		// 	Interface: "192.168.100.57",
+		// },
 		{
 			Ip:        "192.168.1.131",
 			Interface: "192.168.1.133",
@@ -65,6 +76,9 @@ func MasonLight() {
 
 	i := 0
 	for {
+		if !checkCabinet {
+			break
+		}
 		online := checkPing(config)
 		if online {
 			i = 0
@@ -92,6 +106,7 @@ func MasonLight() {
 }
 
 func OfficeLight() {
+	checkOffice = true
 	fmt.Println("Controlling office light")
 	config := []IpConf{
 
@@ -102,6 +117,9 @@ func OfficeLight() {
 	}
 
 	for {
+		if !checkOffice {
+			break
+		}
 		online := checkPing(config)
 		if online {
 			sendData("office_on")
