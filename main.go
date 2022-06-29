@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
@@ -25,7 +27,12 @@ var (
 )
 
 func main() {
-	systray.Run(onReady, onExit)
+	go MasonLight()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	fmt.Println("Shuting down Server ...")
 }
 
 func menuHandler() {
@@ -70,7 +77,7 @@ func MasonLight() {
 		// },
 		{
 			Ip:        "192.168.1.131",
-			Interface: "192.168.1.133",
+			Interface: "192.168.1.120",
 		},
 	}
 
@@ -134,11 +141,12 @@ func checkPing(config []IpConf) bool {
 		cmd := exec.Command(
 			"ping",
 			"-S", con.Interface,
+			"-c", "4",
 			con.Ip,
 		)
 
 		cmd.SysProcAttr = &syscall.SysProcAttr{
-			HideWindow: true,
+			Foreground: false,
 		}
 		out, err := cmd.Output()
 		if err == nil {
@@ -156,9 +164,9 @@ func parseCmd(s string) bool {
 	if strings.Index(s, "Destination host unreachable") > 0 {
 		return false
 	}
-	str := s[strings.Index(s, "(")+1 : strings.Index(s, "%")]
+	str := s[strings.Index(s, "packets received, ")+18 : strings.Index(s, "%")]
 
-	lost, err := strconv.ParseInt(str, 0, 32)
+	lost, err := strconv.ParseFloat(str, 32)
 	if err != nil || lost == 100 {
 		return false
 	}

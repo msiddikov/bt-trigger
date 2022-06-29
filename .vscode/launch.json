@@ -16,7 +16,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "H:\\ReactProjects\\bt-trigger\\main.go"
+            "program": "main.go"
         }
     ]
 }
