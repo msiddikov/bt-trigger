@@ -46,7 +46,7 @@ func macBookPower() {
 		}
 
 		if batt < 30 {
-			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=8fb139b880ca42f5bdf01976811024ec")
+			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=0e88474b75f04f17874ec186bc1b1a33")
 			if !currentlyOn {
 				lvn.Logger.Infof("Turning on charger. battery is %v", batt)
 			}
@@ -54,7 +54,7 @@ func macBookPower() {
 		}
 
 		if batt > 90 {
-			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=a11b479d457544a79db7a07f4b275fd6")
+			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=cfa90d7765054895ae2cc9aa126dc4c7")
 			if currentlyOn {
 				lvn.Logger.Infof("Turning off charger. battery is %v", batt)
 			}
