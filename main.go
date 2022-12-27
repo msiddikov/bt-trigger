@@ -35,34 +35,43 @@ func main() {
 }
 
 func macBookPower() {
-	currentlyOn = false
 	fmt.Println("Controlling Mason's macBook power")
 
 	for {
-		batt, err := getBatteryPercentage()
+		batt, chargerOn, err := batteryStatus()
+
 		if err != nil {
 			lvn.Logger.Error("Cannot get battery info: " + err.Error())
-			time.Sleep(time.Minute * 10)
+			time.Sleep(time.Minute * 5)
+			continue
 		}
 
-		if batt < 30 {
+		if batt < 30 && !chargerOn {
+			lvn.Logger.Infof("Turning on charger. battery is %v", batt)
 			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=0e88474b75f04f17874ec186bc1b1a33")
-			if !currentlyOn {
-				lvn.Logger.Infof("Turning on charger. battery is %v", batt)
-			}
-			currentlyOn = true
 		}
 
-		if batt > 90 {
+		if batt > 90 && chargerOn {
+			lvn.Logger.Infof("Turning off charger. battery is %v", batt)
 			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=cfa90d7765054895ae2cc9aa126dc4c7")
-			if currentlyOn {
-				lvn.Logger.Infof("Turning off charger. battery is %v", batt)
-			}
-			currentlyOn = false
 		}
 		time.Sleep(time.Second * 10)
 	}
 
+}
+
+func batteryStatus() (int, bool, error) {
+	batt, err := getBatteryPercentage()
+	if err != nil {
+		return 0, false, err
+	}
+	time.Sleep(1 * time.Minute)
+	batt2, err := getBatteryPercentage()
+	if err != nil {
+		return 0, false, err
+	}
+
+	return batt2, batt2 > batt || batt2 == 100, nil
 }
 
 func getBatteryPercentage() (int, error) {
