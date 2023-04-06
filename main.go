@@ -3,15 +3,14 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
-	"os/signal"
 	"regexp"
 	"strconv"
 	"syscall"
 	"time"
 
 	lvn "github.com/Lavina-Tech-LLC/lavinagopackage/v2"
+	"github.com/Lavina-Tech-LLC/lavinagopackage/v2/logger"
 )
 
 type (
@@ -21,17 +20,11 @@ type (
 	}
 )
 
-var (
-	currentlyOn bool
-)
-
 func main() {
+	lvn.Logger.Use(logger.Timestamper)
 	go macBookPower()
 
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	fmt.Println("Shuting down Server ...")
+	lvn.WaitExitSignal()
 }
 
 func macBookPower() {
@@ -39,6 +32,8 @@ func macBookPower() {
 
 	for {
 		batt, chargerOn, err := batteryStatus()
+
+		lvn.Logger.Noticef("batt, chargerOn, err: %v, %v, %v", batt, chargerOn, err != nil)
 
 		if err != nil {
 			lvn.Logger.Error("Cannot get battery info: " + err.Error())
@@ -55,7 +50,6 @@ func macBookPower() {
 			lvn.Logger.Infof("Turning off charger. battery is %v", batt)
 			http.Get("https://as-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=cfa90d7765054895ae2cc9aa126dc4c7")
 		}
-		time.Sleep(time.Second * 10)
 	}
 
 }
@@ -100,8 +94,4 @@ func parseCmd(s string) (int, error) {
 	str := (match[0])[:len(match[0])-1]
 
 	return strconv.Atoi(str)
-}
-
-func sendData(powerNeeded int) {
-
 }
